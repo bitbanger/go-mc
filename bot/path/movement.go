@@ -114,13 +114,18 @@ const (
 
 func (m Movement) Possible(nav *Nav, x, y, z int, from V3, previous Movement) bool {
 	// fmt.Printf("%s.Possible(%d,%d,%d)\n", m, x, y, z)
+	fmt.Printf("Block: %s\n", nav.World.GetBlockStatus(x, y, z))
 	switch m {
 	case Waypoint, TraverseNorth, TraverseSouth, TraverseEast, TraverseWest:
 		if !SteppableBlock(nav.World.GetBlockStatus(x, y, z)) {
+			// fmt.Printf("false-ing on block status %s\n", nav.World.GetBlockStatus(x, y, z))
+			// fmt.Printf("steppable? %s\n", SteppableBlock(world.BlockStatus(66)))
 			return false
 		}
+		// fmt.Printf("true-ing\n")
 		b1, b2 := nav.World.GetBlockStatus(x, y+1, z), nav.World.GetBlockStatus(x, y+2, z)
 		u1, u2 := AirLikeBlock(b1) || IsLadder(b1), AirLikeBlock(b2) || IsLadder(b2)
+		// fmt.Printf("u1 and u2 are %s and %s\n", u1, u2)
 		return u1 && u2
 
 	case TraverseNorthWest, TraverseNorthEast, TraverseSouthWest, TraverseSouthEast:

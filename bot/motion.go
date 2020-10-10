@@ -103,7 +103,9 @@ func (c *Client) PluginMessage(channel string, msg []byte) error {
 // insideBlock is true when the player's head is inside of a block's collision.
 func (c *Client) UseBlock(hand, locX, locY, locZ, face int, cursorX, cursorY, cursorZ float32, insideBlock bool) error {
 	return c.conn.WritePacket(pk.Marshal(
-		data.UseItem,
+		// data.UseItem,
+		// data.PlayerBlockPlacement,
+		0x2E,
 		pk.VarInt(hand),
 		pk.Position{X: locX, Y: locY, Z: locZ},
 		pk.VarInt(face),

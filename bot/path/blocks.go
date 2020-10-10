@@ -1,6 +1,8 @@
 package path
 
 import (
+	// "fmt"
+
 	"github.com/Tnze/go-mc/bot/world"
 	"github.com/Tnze/go-mc/data/block"
 )
@@ -104,6 +106,9 @@ func init() {
 }
 
 func SteppableBlock(bID world.BlockStatus) bool {
+	if bID == world.BlockStatus(66) {
+		return true
+	}
 	_, ok := safeStepBlocks[bID]
 	return ok
 }
