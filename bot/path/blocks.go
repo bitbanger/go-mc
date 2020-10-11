@@ -45,14 +45,20 @@ var (
 		block.MossyStoneBrickStairs,
 		block.PolishedDioriteStairs,
 		block.MossyCobblestoneStairs,
+		block.CobblestoneStairs,
 		block.EndStoneBrickStairs,
 		block.StoneStairs,
 		block.SmoothSandstoneStairs,
 		block.SmoothQuartzStairs,
+		block.SmoothStone,
 		block.GraniteStairs,
 		block.AndesiteStairs,
 		block.RedNetherBrickStairs,
 		block.PolishedAndesiteStairs,
+		block.Sand,
+		block.Obsidian,
+		// block.SmoothStoneSlab,
+		block.Glowstone,
 	}
 
 	safeWalkBlocks = make(map[world.BlockStatus]struct{}, 128)

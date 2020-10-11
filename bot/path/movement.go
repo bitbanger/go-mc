@@ -114,7 +114,7 @@ const (
 
 func (m Movement) Possible(nav *Nav, x, y, z int, from V3, previous Movement) bool {
 	// fmt.Printf("%s.Possible(%d,%d,%d)\n", m, x, y, z)
-	fmt.Printf("Block: %s\n", nav.World.GetBlockStatus(x, y, z))
+	// fmt.Printf("Block: %s\n", nav.World.GetBlockStatus(x, y, z))
 	switch m {
 	case Waypoint, TraverseNorth, TraverseSouth, TraverseEast, TraverseWest:
 		if !SteppableBlock(nav.World.GetBlockStatus(x, y, z)) {

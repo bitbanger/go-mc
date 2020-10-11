@@ -45,7 +45,15 @@ var (
 	apiKey = "CC238ZlLq4J0m-JTvrKBlmx5XNA"
 	re = regexp.MustCompile("[A-Z]+:")
 	re2 = regexp.MustCompile("\\.\\!\\?")
+
+	curPath []astar.Pather
+
+	playerUUIDToName = map[string]string{
+		"cc4bd981-aa2f-4e9e-9a62-30f520115f27": "CowSnail",
+		"abacf297-e722-445e-ad4b-484221445875": "scefing",
+	}
 )
+
 
 var session = cleverbot.New(apiKey)
 
@@ -107,6 +115,7 @@ func main() {
 	c.Events.Disconnect = onDisconnect
 	c.Events.SoundPlay = onSound
 	c.Events.Die = onDeath
+	c.Events.PrePhysics = onPhys
 
 	//JoinGame
 	err = c.HandleGame()
@@ -230,6 +239,41 @@ func doPath(c1 chan pathRet, x, y, z int) {
 	}
 }
 
+func onPhys() error {
+	if len(curPath) <= 0 {
+		c.Inputs = path.Inputs{}
+		return nil
+	}
+
+	pos := c.Player.Pos
+
+	start:
+	next := curPath[len(curPath)-1].(path.Tile)
+
+	dx, dy, dz := pos.X-float64(next.Pos.X)-0.48, pos.Y-float64(next.Pos.Y)-1, pos.Z-float64(next.Pos.Z)-0.48
+	if next.IsComplete(path.Point{X: dx, Y: dy, Z: dz}) {
+			fmt.Printf("next path marker is %s\n", next.Pos)
+			curPath = curPath[:len(curPath)-1]
+			if len(curPath) > 0 {
+				goto start
+			}
+	}
+
+	inputs := next.Inputs(
+		path.Point{X: pos.X, Y: pos.Y, Z: pos.Z},
+		path.Point{X: dx, Y: dy, Z: dz},
+		path.Point{X: 1, Y: 1, Z: 1},
+		20 * time.Millisecond,
+	)
+
+	c.Inputs = inputs
+
+	// fmt.Printf("%s\n", inputs)
+	// c.Chat(fmt.Sprintf("/teleport Telleilogical %d %d %d", next.Pos.X, next.Pos.Y, next.Pos.Z))
+
+	return nil
+}
+
 func onChatMsg(cm chat.Message, pos byte, uuid uuid.UUID) error {
 	cmstr := cm.String()
 	log.Println("Chat:", cmstr)
@@ -268,6 +312,38 @@ func onChatMsg(cm chat.Message, pos byte, uuid uuid.UUID) error {
 			if err != nil {
 				log.Fatal(err)
 			}
+		} else if len(msg) > 3 && strings.ToLower(msg[:4]) == "come" {
+			requester := spl[0][1:]
+			players := c.Wd.PlayerEntities()
+			for _, ent := range players {
+				// c.Chat(fmt.Sprintf("player found: %+v\n", ent))
+				if playerUUIDToName[ent.UUID.String()] == requester {
+					c1 := make(chan pathRet, 1)
+					x := int(math.Floor(ent.X))
+					y := int(math.Floor(ent.Y - 0.6))
+					z := int(math.Floor(ent.Z))
+					go doPath(c1, x, y, z)
+					c.Chat(fmt.Sprintf("going to %s at %d, %d, %d", requester, x, y, z))
+					select {
+					case pr := <-c1:
+						path := pr.path
+						err := pr.err
+						if err != nil {
+							c.Chat("No path found")
+						} else {
+								c.Chat(fmt.Sprintf("Found a path (length %d)", len(path)))
+								fmt.Printf("%s\n", path)
+								for p, i := range path {
+									fmt.Printf("path %d: %s\n", i, p)
+								}
+								curPath = path
+						}
+					case <-time.After(5 * time.Second):
+						c.Chat("No path found (timed out searching)")
+					}
+				}
+			}
+			// c.Chat(fmt.Sprintf("want to go to %s at %d %d %d\n", requester, -1, -1, -1))
 		} else if len(msg) > 3 && strings.ToLower(msg[:4]) == "walk" {
 			coords := strings.Split(msg, " ")[1:]
 			x, _ := strconv.Atoi(coords[0])
@@ -285,6 +361,10 @@ func onChatMsg(cm chat.Message, pos byte, uuid uuid.UUID) error {
 				} else {
 						c.Chat(fmt.Sprintf("Found a path (length %d)", len(path)))
 						fmt.Printf("%s\n", path)
+						for p, i := range path {
+							fmt.Printf("path %d: %s\n", i, p)
+						}
+						curPath = path
 				}
 			case <-time.After(5 * time.Second):
 				c.Chat("No path found (timed out searching)")

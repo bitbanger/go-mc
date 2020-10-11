@@ -2,7 +2,7 @@
 package path
 
 import (
-	"fmt"
+	// "fmt"
 	"math"
 	"math/rand"
 	"strings"
@@ -88,7 +88,7 @@ func (t Tile) PathNeighbors() []astar.Pather {
 		x, y, z := m.Offset()
 		pos := V3{X: t.Pos.X + x, Y: t.Pos.Y + y, Z: t.Pos.Z + z}
 		possible := m.Possible(t.Nav, pos.X, pos.Y, pos.Z, t.Pos, t.Movement)
-		fmt.Printf("%v-%v: Trying (%v) %v: possible=%v\n", t.Movement, t.Pos, pos, m, possible)
+		// fmt.Printf("%v-%v: Trying (%v) %v: possible=%v\n", t.Movement, t.Pos, pos, m, possible)
 		if possible {
 			possibles = append(possibles, Tile{
 				Nav:         t.Nav,
@@ -148,7 +148,7 @@ func (t Tile) Inputs(pos, deltaPos, vel Point, runTime time.Duration) Inputs {
 	case AscendNorth, AscendSouth, AscendEast, AscendWest:
 		var (
 			b          = block.ByID[block.StateID[uint32(t.BlockStatus)]]
-			isStairs   = strings.HasSuffix(b.Name, "_stairs")
+			isStairs   = strings.HasSuffix(b.Name, "_stairs")// || strings.HasSuffix(b.Name, "_slab")
 			maybeStuck = runTime < 1250*time.Millisecond
 			dist2      = math.Sqrt(deltaPos.X*deltaPos.X + deltaPos.Z*deltaPos.Z)
 		)
