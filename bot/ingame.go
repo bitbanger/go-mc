@@ -173,6 +173,8 @@ func (c *Client) handlePacket(p pk.Packet) (disconnect bool, err error) {
 		err = handleDestroyEntitiesPacket(c, p)
 	case data.RelEntityMove:
 		err = handleEntityPositionPacket(c, p)
+	case data.EntityTeleport:
+		err = handleEntityTeleport(c, p)
 	case data.EntityMoveLook:
 		err = handleEntityPositionLookPacket(c, p)
 	case data.EntityLook:
@@ -215,6 +217,14 @@ func (c *Client) handlePacket(p pk.Packet) (disconnect bool, err error) {
 		// fmt.Printf("ignore pack id %X\n", p.ID)
 	}
 	return
+}
+
+func handleEntityTeleport(c *Client, p pk.Packet) error {
+	var se ptypes.EntityTeleport
+	if err := se.Decode(p); err != nil {
+		return err
+	}
+	return c.Wd.OnEntityTeleport(se)
 }
 
 func handleSpawnEntityPacket(c *Client, p pk.Packet) error {

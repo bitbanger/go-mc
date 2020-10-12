@@ -59,6 +59,7 @@ var (
 		block.Obsidian,
 		// block.SmoothStoneSlab,
 		block.Glowstone,
+		block.BlackBed,
 	}
 
 	safeWalkBlocks = make(map[world.BlockStatus]struct{}, 128)

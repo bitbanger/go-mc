@@ -19,6 +19,7 @@ import (
 	"github.com/Tnze/go-mc/bot/path"
 	// "github.com/Tnze/go-mc/bot/world/entity/player"
 	"github.com/Tnze/go-mc/chat"
+	"github.com/Tnze/go-mc/data/block"
 	"github.com/Tnze/go-mc/realms"
 	_ "github.com/Tnze/go-mc/data/lang/en-us"
 	"github.com/ugjka/cleverbot-go"
@@ -52,6 +53,11 @@ var (
 		"cc4bd981-aa2f-4e9e-9a62-30f520115f27": "CowSnail",
 		"abacf297-e722-445e-ad4b-484221445875": "scefing",
 	}
+
+	useBedOnDest = false
+	bedX = 0
+	bedY = 0
+	bedZ = 0
 )
 
 
@@ -239,8 +245,11 @@ func doPath(c1 chan pathRet, x, y, z int) {
 	}
 }
 
+var maxPathDist int = 3
+
 func onPhys() error {
-	if len(curPath) <= 0 {
+	// if len(curPath) <= 0 {
+	if len(curPath) <= maxPathDist {
 		c.Inputs = path.Inputs{}
 		return nil
 	}
@@ -252,10 +261,16 @@ func onPhys() error {
 
 	dx, dy, dz := pos.X-float64(next.Pos.X)-0.48, pos.Y-float64(next.Pos.Y)-1, pos.Z-float64(next.Pos.Z)-0.48
 	if next.IsComplete(path.Point{X: dx, Y: dy, Z: dz}) {
-			fmt.Printf("next path marker is %s\n", next.Pos)
+			// fmt.Printf("next path marker is %s\n", next.Pos)
 			curPath = curPath[:len(curPath)-1]
-			if len(curPath) > 0 {
+			if len(curPath) > maxPathDist {
 				goto start
+			} else {
+				if useBedOnDest {
+					// bed(int(pos.X+dx), int(pos.Y+dy), int(pos.Z+dz))
+					bed(bedX, bedY, bedZ)
+					useBedOnDest = false
+				}
 			}
 	}
 
@@ -308,10 +323,73 @@ func onChatMsg(cm chat.Message, pos byte, uuid uuid.UUID) error {
 		msg := spl[1]
 		// requester := spl2[1]
 		if len(msg) > 2 && strings.ToLower(msg[:3]) == "bed" {
-			err := bed(-8576,69,-1995)
+			/*err := bed(-8576,69,-1995)
 			if err != nil {
 				log.Fatal(err)
+			}*/
+			pos := c.Player.Pos
+			x, y, z := int(pos.X), int(pos.Y), int(pos.Z)
+			// bedX := 0
+			// bedY := 0
+			// bedZ := 0
+			var bestDist int = -1
+			for i := x-10; i < x+10; i++ {
+				for j := y-10; j < y+10; j++ {
+					for k := z-10; k < z+10; k++ {
+						// fmt.Printf("%d, %d, %d\n", i, j, k)
+						// fmt.Printf("%d\n", uint32(block.StateID[uint32(c.Wd.GetBlockStatus(i, j, k))]))
+						// fmt.Printf("black bed is %d\n", block.BlackBed.MinStateID)
+						if uint32(block.StateID[uint32(c.Wd.GetBlockStatus(i, j, k))]) == uint32(block.StateID[block.BlackBed.MinStateID]) {
+							// TODO: path distance, not euclidean
+							// dist := math.Sqrt(float64((x-i)*(x-i) + (y-j)*(y-j) + (z-k)*(z-k)))
+							var dist int
+							c1 := make(chan pathRet, 1)
+							go doPath(c1, bedX, bedY, bedZ)
+							select {
+							case pr := <-c1:
+								path := pr.path
+								err := pr.err
+								if err == nil {
+										// c.Chat(fmt.Sprintf("Found a path (length %d)", len(path)))
+										// curPath = path
+										dist = len(path)
+								}
+							case <-time.After(5 * time.Second):
+								// c.Chat("No path found (timed out searching)")
+								fmt.Printf("")
+							}
+							if bestDist == -1 || dist < bestDist {
+								bestDist = dist
+								// c.Chat(fmt.Sprintf("found best bed at dist %d", bestDist))
+								bedX = i
+								bedY = j
+								bedZ = k
+							}
+						}
+					}
+				}
 			}
+			// c.Chat(fmt.Sprintf("found bed at %d, %d, %d", i, j, k))
+
+			c.Chat("going to bed")
+			c1 := make(chan pathRet, 1)
+			go doPath(c1, bedX, bedY, bedZ)
+			select {
+			case pr := <-c1:
+				path := pr.path
+				err := pr.err
+				if err != nil {
+					c.Chat("No path found")
+				} else {
+						c.Chat(fmt.Sprintf("Found a path (length %d)", len(path)))
+						curPath = path
+				}
+			case <-time.After(5 * time.Second):
+				c.Chat("No path found (timed out searching)")
+			}
+
+			useBedOnDest = true
+
 		} else if len(msg) > 3 && strings.ToLower(msg[:4]) == "come" {
 			requester := spl[0][1:]
 			players := c.Wd.PlayerEntities()
@@ -332,10 +410,6 @@ func onChatMsg(cm chat.Message, pos byte, uuid uuid.UUID) error {
 							c.Chat("No path found")
 						} else {
 								c.Chat(fmt.Sprintf("Found a path (length %d)", len(path)))
-								fmt.Printf("%s\n", path)
-								for p, i := range path {
-									fmt.Printf("path %d: %s\n", i, p)
-								}
 								curPath = path
 						}
 					case <-time.After(5 * time.Second):
@@ -360,10 +434,6 @@ func onChatMsg(cm chat.Message, pos byte, uuid uuid.UUID) error {
 					c.Chat("No path found")
 				} else {
 						c.Chat(fmt.Sprintf("Found a path (length %d)", len(path)))
-						fmt.Printf("%s\n", path)
-						for p, i := range path {
-							fmt.Printf("path %d: %s\n", i, p)
-						}
 						curPath = path
 				}
 			case <-time.After(5 * time.Second):

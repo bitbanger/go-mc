@@ -19,6 +19,18 @@ func (p *SpawnEntity) Decode(pkt pk.Packet) error {
 		&p.Data, &p.VelX, &p.VelY, &p.VelZ)
 }
 
+type EntityTeleport struct {
+	ID	pk.VarInt
+	X, Y, Z pk.Double // absolute
+	Yaw, Pitch	pk.Angle
+	OnGround	pk.Boolean
+}
+
+func (p *EntityTeleport) Decode(pkt pk.Packet) error {
+	return pkt.Scan(&p.ID, &p.X, &p.Y, &p.Z,
+				&p.Yaw, &p.Pitch, &p.OnGround)
+}
+
 // SpawnPlayer is a clientbound packet used to describe a player entering
 // visible range.
 type SpawnPlayer struct {

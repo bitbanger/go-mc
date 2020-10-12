@@ -23,6 +23,25 @@ func (w *World) PlayerEntities() []entity.Entity {
 	return out
 }
 
+func (w *World) OnEntityTeleport(pkt ptypes.EntityTeleport) error {
+	w.entityLock.Lock()
+	defer w.entityLock.Unlock()
+
+	ent, ok := w.Entities[int32(pkt.ID)]
+	if !ok {
+		return fmt.Errorf("cannot handle position update for unknown entity %d", pkt.ID)
+	}
+
+	ent.X = float64(pkt.X)
+	ent.Y = float64(pkt.Y)
+	ent.Z = float64(pkt.Z)
+	ent.Pitch = int8(pkt.Pitch)
+	ent.Yaw = int8(pkt.Yaw)
+	ent.OnGround = bool(pkt.OnGround)
+
+	return nil
+}
+
 // OnSpawnEntity should be called when a SpawnEntity packet
 // is recieved.
 func (w *World) OnSpawnEntity(pkt ptypes.SpawnEntity) error {
