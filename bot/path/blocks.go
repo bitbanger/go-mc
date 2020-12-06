@@ -58,6 +58,7 @@ var (
 		block.Sand,
 		block.Obsidian,
 		// block.SmoothStoneSlab,
+		block.CobblestoneSlab,
 		block.Glowstone,
 		block.BlackBed,
 	}

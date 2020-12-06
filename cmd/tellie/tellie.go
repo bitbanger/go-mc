@@ -84,6 +84,7 @@ func main() {
 	fmt.Println("astk:", c.AsTk)
 
 	// parse realms
+	/*
 	r = realms.New("1.16.3", c.Name, c.AsTk, c.Auth.UUID)
 	servers,err := r.Worlds()
 
@@ -107,6 +108,14 @@ func main() {
 	}
 	if realm_address == "" {
 		panic("Realm not found!")
+	}
+	*/
+	address := "51.81.48.88:25576"
+	rholder := strings.SplitN(address,":",2)
+	realm_address = rholder[0]
+	realm_port, err = strconv.Atoi(rholder[1])
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// join server
@@ -250,6 +259,11 @@ var maxPathDist int = 3
 func onPhys() error {
 	// if len(curPath) <= 0 {
 	if len(curPath) <= maxPathDist {
+		if useBedOnDest {
+			bed(bedX, bedY, bedZ)
+			// c.Chat("")
+			useBedOnDest = false
+		}
 		c.Inputs = path.Inputs{}
 		return nil
 	}
@@ -269,6 +283,7 @@ func onPhys() error {
 				if useBedOnDest {
 					// bed(int(pos.X+dx), int(pos.Y+dy), int(pos.Z+dz))
 					bed(bedX, bedY, bedZ)
+					// c.Chat("in bed")
 					useBedOnDest = false
 				}
 			}
@@ -369,26 +384,29 @@ func onChatMsg(cm chat.Message, pos byte, uuid uuid.UUID) error {
 					}
 				}
 			}
-			// c.Chat(fmt.Sprintf("found bed at %d, %d, %d", i, j, k))
-
-			c.Chat("going to bed")
+			// c.Chat(fmt.Sprintf("going to bed at %d, %d, %d", bedX, bedY, bedZ))
 			c1 := make(chan pathRet, 1)
+			useBedOnDest = true
 			go doPath(c1, bedX, bedY, bedZ)
 			select {
 			case pr := <-c1:
 				path := pr.path
 				err := pr.err
 				if err != nil {
-					c.Chat("No path found")
+					// c.Chat("No path found")
+					c.Chat("can't; will log")
+					useBedOnDest = false
+					panic(nil)
 				} else {
-						c.Chat(fmt.Sprintf("Found a path (length %d)", len(path)))
+						// c.Chat(fmt.Sprintf("Found a path (length %d)", len(path)))
 						curPath = path
 				}
 			case <-time.After(5 * time.Second):
-				c.Chat("No path found (timed out searching)")
+				// c.Chat("No path found (timed out searching)")
+				c.Chat("can't; will log")
+				useBedOnDest = false
+				panic(nil)
 			}
-
-			useBedOnDest = true
 
 		} else if len(msg) > 3 && strings.ToLower(msg[:4]) == "come" {
 			requester := spl[0][1:]
@@ -440,10 +458,10 @@ func onChatMsg(cm chat.Message, pos byte, uuid uuid.UUID) error {
 				c.Chat("No path found (timed out searching)")
 			}
 
-		} else if msg == "You can only sleep at night and during thunderstorms" {
-			c.Chat("I can't sleep just yet.")
+		} else if msg == "You can sleep only at night and during thunderstorms" {
+			c.Chat("too early, sorry! :)")
 		} else if msg == "This bed is occupied" {
-			c.Chat("In bed")
+			c.Chat("in bed")
 		} else if len(msg) > 6 && strings.ToLower(msg[:6]) == "tellie" {
 			mspl := strings.Split(msg, " ")
 			pmsg := msg
